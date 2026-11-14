@@ -1,40 +1,108 @@
-A correlated Gaussian, observed only where $x_0 + x_1 > 1$. Every model in
-delphi.ai follows the same three steps: describe the truncation set as a plain
-callable `phi`, construct the model, and `fit` it to the sample you observed.
+Every model in delphi.ai is a `DelphiModel`: a `torch.nn.Module` that also
+says how it is trained. You write the parameters, `forward` and the loss; one
+trainer runs the optimization, records every iterate, and reports estimates at
+several of them. The models in this library, from truncated distributions to
+regressions, are built the same way.
+
+## Write a model
+
+A model that estimates the median of a sample, as the value minimizing the
+mean absolute error:
 
 ```python
 import torch as ch
+import torch.utils.data
+
+import delphi.delphi
+import delphi.trainer
+from delphi.configs import base
+
+
+class Median(delphi.delphi.DelphiModel[base.DelphiConfig]):
+    """The median of a sample: the minimizer of the mean absolute error."""
+
+    # The pydantic config hyperparameters are validated against.
+    defaults = base.DelphiConfig
+
+    def __init__(self, *, hyperparameters=None):
+        super().__init__(hyperparameters=hyperparameters)
+        self.median = ch.nn.Parameter(ch.zeros(1))
+        # The loss the trainer minimizes: criterion(model(x), y).
+        self.criterion = self.absolute_error
+
+    def forward(self, x):
+        return self.median.expand(x.size(0))
+
+    @staticmethod
+    def absolute_error(prediction, target):
+        return (prediction - target).abs().mean()
+```
+
+## Train it
+
+Hand the model and its validated hyperparameters to the trainer, with a
+training and a validation loader:
+
+```python
+ch.manual_seed(0)
+samples = ch.distributions.Exponential(1.0).sample([2000])
+loader = torch.utils.data.DataLoader(
+    torch.utils.data.TensorDataset(ch.zeros(2000, 1), samples), batch_size=100
+)
+
+model = Median(
+    hyperparameters={"iterations": 2000, "lr": 0.05, "record_params_every": 1}
+)
+procedure = delphi.trainer.Trainer(model, model.hyperparameters).train_model(
+    loader, loader
+)
+```
+
+## Read the estimates
+
+`train_model` returns the whole procedure; its last phase holds the iterates
+and the estimates computed from them:
+
+```python
+run = procedure.phases[-1]
+run.avg_params    # tensor([0.6937]): mean of the iterates after the burn-in
+run.final_params  # tensor([0.6970]): the last iterate
+run.stop_reason   # "max_iterations"
+```
+
+The sample median is 0.6931. The averaged iterate is the one to read: the
+last iterate still moves with each batch.
+
+## Truncated in one minute
+
+The library's first area is truncated statistics: samples missing everything
+outside a set. Its models wrap the trainer behind `fit`. Here, a correlated
+Gaussian observed only where $x_0 + x_1 > 1$:
+
+```python
 import torch.distributions
 
 from delphi.truncated.distributions import truncated_multivariate_normal
 
 ch.manual_seed(0)
-
-# Ground truth: a correlated 2-D Gaussian.
-loc = ch.tensor([0.0, 0.0])
-covariance_matrix = ch.tensor([[1.0, 0.5], [0.5, 1.0]])
-population = torch.distributions.MultivariateNormal(loc, covariance_matrix).sample(
-    [100000]
-)
+population = torch.distributions.MultivariateNormal(
+    ch.zeros(2), ch.tensor([[1.0, 0.5], [0.5, 1.0]])
+).sample([100000])
 
 
-# The truncation set: only points with x0 + x1 > 1 are ever observed.
-def phi(x):
+def phi(x):  # the truncation set: what is ever observed
     return x.sum(dim=-1) > 1.0
 
 
 S = population[phi(population)][:10000]
-alpha = phi(population).float().mean().item()
 
 # Fit on standardized data, moving phi through the same transform.
 mean, std = S.mean(0), S.std(0)
-# The default hyperparameters: 2500 steps, lr 1e-2, the Fisher schedule.
 model = truncated_multivariate_normal.TruncatedMultivariateNormal(
-    phi=lambda z: phi(z * std + mean), alpha=alpha
+    phi=lambda z: phi(z * std + mean), alpha=phi(population).float().mean().item()
 )
 model.fit((S - mean) / std)
 
-# Undo the transform on the way out.
 recovered_loc = model.avg_loc_ * std + mean
 recovered_cov = ch.diag(std) @ model.avg_covariance_matrix_ @ ch.diag(std)
 ```
@@ -53,7 +121,9 @@ entry, and even get the sign of the correlation wrong.
 
 ## Where next
 
-- [Usage notes](/usage-notes): what `phi`, `alpha` and the hyperparameters do, and which estimate to read.
-- [Multivariate normal](/truncated-multivariate-normal): the model above in full.
-- The same page covers the fit when `phi` cannot be queried: leave it out.
-- [Linear regression](/truncated-linear-regression): truncation on the response of a linear model.
+- [Training and estimates](/training-and-estimates): hyperparameters, the
+  learning-rate schedule, and which estimate to read.
+- [Truncation](/truncation): `phi`, `alpha`, and learning the set when it
+  cannot be queried.
+- [The trainer](/trainer): what the trainer runs, and the hooks a model can
+  override.

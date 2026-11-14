@@ -1,28 +1,14 @@
 /**
- * @fileoverview A config's fields: the model's own first, then the groups
- * every model shares, folded.
+ * @fileoverview A config's fields, grouped by the config class that declares
+ * them: the model's own open, the shared ones folded.
  * Copyright 2026 Delphi Tech. All Rights Reserved.
  * Author: pstefanou12@
  */
 
 import {Description, Table} from 'pat-components';
 
-import type {Config, ConfigField} from '../../api';
+import type {Config, ConfigField, ConfigGroup} from '../../api';
 import {Inline} from '../doc';
-
-// TODO(pstefanou12): Take the groups and their order from the delphi.ai
-// manifest, which will title them by the config class that declares each.
-/** The groups a config's fields fall in, in the order they are shown. */
-const GROUP_ORDER: readonly string[] = [
-  'Model',
-  'Trainer',
-  'Optimizer',
-  'Learning-rate schedule',
-  'Data',
-];
-
-/** The group shown open: the fields the model itself declares. */
-const OWN_GROUP = 'Model';
 
 interface FieldTableProps {
   fields: readonly ConfigField[];
@@ -41,7 +27,7 @@ function FieldTable({fields}: FieldTableProps) {
       <tbody>
         {fields.map(field => (
           <tr key={field.name}>
-            <td title={`Declared in ${field.declaredIn}`}>
+            <td>
               <code className="api-name">{field.name}</code>
               {field.type && <div className="api-type">{field.type}</div>}
             </td>
@@ -64,14 +50,22 @@ function FieldTable({fields}: FieldTableProps) {
   );
 }
 
-/** How hyperparameters are passed; shown once above a page's configs. */
-export function HyperparameterIntro() {
+interface GroupProps {
+  group: ConfigGroup;
+}
+
+function FoldedGroup({group}: GroupProps) {
   return (
-    <p>
-      Pass any of these as <code>{'hyperparameters={"key": value}'}</code>. They
-      are validated by the config named below; a key it does not declare is
-      ignored with a warning.
-    </p>
+    <details className="disclosure">
+      <summary>
+        <code>{group.name}</code>{' '}
+        <span className="badge">{group.fields.length}</span>
+        {group.summary && (
+          <span className="disclosure-note"> {group.summary}</span>
+        )}
+      </summary>
+      <FieldTable fields={group.fields} />
+    </details>
   );
 }
 
@@ -80,29 +74,27 @@ export interface HyperparameterTableProps {
   config: Config;
 }
 
-/** The config's fields by group. */
+/**
+ * How to pass hyperparameters, then the config's own fields, then the
+ * groups it inherits, folded.
+ */
 export function HyperparameterTable({config}: HyperparameterTableProps) {
-  const groups = GROUP_ORDER.map(name => ({
-    name,
-    fields: config.fields.filter(field => field.group === name),
-  })).filter(group => group.fields.length > 0);
-
+  const [own, ...shared] = config.groups;
   return (
     <>
-      <p className="config-name">
-        Config: <code>{config.name}</code>
+      <p>
+        Pass any of these as <code>{'hyperparameters={"key": value}'}</code>.
+        They are validated by <code>{config.name}</code>; a key it does not
+        declare is ignored with a warning.
       </p>
-      {groups.map(group =>
-        group.name === OWN_GROUP ? (
-          <FieldTable key={group.name} fields={group.fields} />
-        ) : (
-          <details key={group.name} className="disclosure">
-            <summary>
-              {group.name} <span className="badge">{group.fields.length}</span>
-            </summary>
-            <FieldTable fields={group.fields} />
-          </details>
-        ),
+      {own && <FieldTable fields={own.fields} />}
+      {shared.length > 0 && (
+        <>
+          <p>Inherited from the shared configs:</p>
+          {shared.map(group => (
+            <FoldedGroup key={group.name} group={group} />
+          ))}
+        </>
       )}
     </>
   );

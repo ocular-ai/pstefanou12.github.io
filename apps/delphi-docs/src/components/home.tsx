@@ -8,7 +8,7 @@
 import {firstPageOf} from 'pat-components';
 import {Link} from 'react-router-dom';
 
-import {version} from '../api';
+import {MANIFEST} from '../api';
 import {GITHUB, PARTS} from '../content/registry';
 import type {Part} from '../content/registry';
 
@@ -49,12 +49,7 @@ export function Home() {
         around one trainer that fits every model.
       </p>
       <p>
-        {version && (
-          <>
-            Version <code>{version}</code>.{' '}
-          </>
-        )}
-        Source and issues are on{' '}
+        Version <code>{MANIFEST.version}</code>. Source and issues are on{' '}
         <a href={GITHUB} target="_blank" rel="noopener noreferrer">
           GitHub
         </a>

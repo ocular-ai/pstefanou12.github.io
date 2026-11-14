@@ -11,23 +11,28 @@ import {fileURLToPath} from 'node:url';
 
 import {describe, expect, it} from 'vitest';
 
-import {model} from '../api';
-import {PAGES, PAPERS, pagesCiting} from './registry';
-import type {AlgorithmEntry, PaperKey} from './registry';
+import {classDoc, packageDoc} from '../api';
+import {PAPERS, pagesCiting} from './papers';
+import {CLASS_PAGES, PAGES, PARTS, classPage} from './registry';
+import type {MdxFolder} from './mdx';
 
 const CONTENT_DIR = fileURLToPath(new URL('.', import.meta.url));
 const SLUGS = new Set(PAGES.map(page => page.slug));
 
-function mdxFiles(folder: string): string[] {
+function mdxNames(folder: MdxFolder): string[] {
   return readdirSync(`${CONTENT_DIR}/${folder}`)
     .filter(name => name.endsWith('.mdx'))
-    .map(name => `${folder}/${name}`);
+    .map(name => name.replace(/\.mdx$/, ''));
 }
 
-const MDX_FILES = [...mdxFiles('guides'), ...mdxFiles('algorithms')];
-
-function algorithmPages(): AlgorithmEntry[] {
-  return PAGES.filter((p): p is AlgorithmEntry => p.kind === 'algorithm');
+function mdxTexts(): Array<[path: string, text: string]> {
+  const folders: MdxFolder[] = ['guides', 'classes', 'packages'];
+  return folders.flatMap(folder =>
+    mdxNames(folder).map((name): [string, string] => {
+      const path = `${folder}/${name}.mdx`;
+      return [path, readFileSync(`${CONTENT_DIR}/${path}`, 'utf8')];
+    }),
+  );
 }
 
 describe('registry', () => {
@@ -35,37 +40,51 @@ describe('registry', () => {
     expect(SLUGS.size).toBe(PAGES.length);
   });
 
-  it('resolves every model, variant and config mode in the manifest', () => {
-    const keys = algorithmPages().flatMap(page => [
-      page.apiKey,
-      ...(page.variants ?? []).map(v => v.apiKey),
-      ...(page.configModes ?? []).map(m => m.apiKey),
-    ]);
-    const missing = keys.filter(key => !model(key));
-    expect(missing).toEqual([]);
+  it('builds every package part from the manifest', () => {
+    for (const part of PARTS) expect(part.sections.length).toBeGreaterThan(0);
+    expect(PARTS.map(part => part.id)).toEqual(
+      expect.arrayContaining(['distributions', 'stats', 'transformations']),
+    );
   });
 
-  it('has a page for every MDX file', () => {
-    const orphans = MDX_FILES.map(path =>
-      path.replace(/^.*\//, '').replace(/\.mdx$/, ''),
-    ).filter(slug => !SLUGS.has(slug));
-    expect(orphans).toEqual([]);
+  it('resolves every class page in the manifest', () => {
+    expect(CLASS_PAGES.filter(page => !classDoc(page.key))).toEqual([]);
+  });
+
+  it('puts the truncated section first in each part that has one', () => {
+    for (const part of PARTS) {
+      const ids = part.sections.map(section => section.id);
+      const truncated = ids.findIndex(id => id.endsWith('-truncated'));
+      if (truncated !== -1) expect(truncated).toBe(0);
+    }
+  });
+
+  it('has a page for every guide MDX file', () => {
+    expect(mdxNames('guides').filter(slug => !SLUGS.has(slug))).toEqual([]);
+  });
+
+  it('has a class page for every class MDX file', () => {
+    expect(mdxNames('classes').filter(name => !classPage(name))).toEqual([]);
+  });
+
+  it('has a package in the manifest for every package MDX file', () => {
+    expect(mdxNames('packages').filter(name => !packageDoc(name))).toEqual([]);
   });
 
   it('only links MDX to pages that exist', () => {
-    const broken = MDX_FILES.flatMap(path => {
-      const text = readFileSync(`${CONTENT_DIR}/${path}`, 'utf8');
-      return [...text.matchAll(/\]\(\/([a-z0-9-]+)\)/g)]
+    const broken = mdxTexts().flatMap(([path, text]) =>
+      [...text.matchAll(/\]\(\/([a-z0-9-]+)\)/g)]
         .map(match => match[1])
         .filter(slug => !SLUGS.has(slug))
-        .map(slug => `${path} → /${slug}`);
-    });
+        .map(slug => `${path} → /${slug}`),
+    );
     expect(broken).toEqual([]);
   });
 
   it('cites every paper from at least one page', () => {
-    // Safe: Object.keys of PAPERS returns exactly its keys.
-    const keys = Object.keys(PAPERS) as PaperKey[];
-    expect(keys.filter(key => pagesCiting(key).length === 0)).toEqual([]);
+    const uncited = Object.keys(PAPERS).filter(
+      key => pagesCiting(key).length === 0,
+    );
+    expect(uncited).toEqual([]);
   });
 });

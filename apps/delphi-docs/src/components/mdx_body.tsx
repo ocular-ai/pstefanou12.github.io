@@ -11,9 +11,10 @@ import {useEffect, useState} from 'react';
 import type {ComponentType} from 'react';
 
 import type {MdxLoader} from '../content/mdx';
+import {CiteDelphi} from './cite_delphi';
 import {PaperList} from './paper_list';
 
-const MDX_COMPONENTS = {...PROSE_COMPONENTS, PaperList};
+const MDX_COMPONENTS = {...PROSE_COMPONENTS, CiteDelphi, PaperList};
 
 /** Props of MdxBody. */
 export interface MdxBodyProps {

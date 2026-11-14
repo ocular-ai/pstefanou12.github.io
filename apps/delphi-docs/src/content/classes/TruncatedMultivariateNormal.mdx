@@ -9,7 +9,7 @@ estimator from what you pass:
 | `phi` and `covariance_matrix` | `KnownTruncationMultivariateNormalKnownCovariance` | mean |
 | neither | `UnknownTruncationMultivariateNormal`: the Hermite expansion | mean, covariance and the set |
 | `covariance_matrix` only | `UnknownTruncationMultivariateNormalKnownCovariance` | mean and the set |
-| `method="l1"`, no `phi` | learns the set by L1 polynomial regression, as [every family can](/truncated-statistics), then fits as if it were known | mean and covariance |
+| `method="l1"`, no `phi` | learns the set by L1 polynomial regression, as [every family can](/truncation), then fits as if it were known | mean and covariance |
 
 The fitted estimator is `model.estimator_`, which holds every diagnostic.
 Every mode reports the same estimates.

@@ -1,0 +1,9 @@
+Each class fits a distribution from a sample observed only inside a set. Pass
+the set as a membership oracle `phi`, or `phi=None` to learn it from the
+sample; see [Truncation](/truncation).
+
+The exponential families share one method: projected SGD on the truncated
+negative log-likelihood, written in the family's natural parameters, with the
+gradient's expectation estimated by rejection sampling through `phi` (Lee,
+Wibisono and Zampetakis, 2023). The normal adds the Hermite expansion for an
+unknown set.

@@ -1,0 +1,5 @@
+Regression, classification and control from samples kept only when the
+response, or a latent variable, lands in a set. Pass the set as a membership
+oracle `phi`; see [Truncation](/truncation). The regressions and classifiers
+are linear models underneath, fit by projected SGD on their truncated
+likelihood, and expose `coef_` and `intercept_` at every iterate.

@@ -50,12 +50,14 @@ export function ExponentialFamilyMethod({
       <p>
         <code>{className}</code> estimates the first term by rejection sampling:
         it draws from the current model and keeps the draws <code>phi</code>{' '}
-        admits. It starts from the untruncated MLE of the sample and descends by
-        projected SGD, keeping <Tex>{'\\theta'}</Tex> in a sublevel set of the
-        loss: its budget is sized from <code>alpha</code> when given, and
-        otherwise widens phase by phase while the projection binds. The Fisher
-        schedule sizes the steps from the Hessian above; see{' '}
-        <Link to="/usage-notes">Usage notes</Link> and{' '}
+        admits (or, with <code>phi=None</code>, a set it first learns; see{' '}
+        <Link to="/truncation">Truncation</Link>). It starts from the
+        untruncated MLE of the sample and descends by projected SGD, keeping{' '}
+        <Tex>{'\\theta'}</Tex> in a sublevel set of the loss: its budget is
+        sized from <code>alpha</code> when given, and otherwise widens phase by
+        phase while the projection binds. The Fisher schedule sizes the steps
+        from the Hessian above; see{' '}
+        <Link to="/training-and-estimates">Training and estimates</Link> and{' '}
         <Link to="/trainer">The trainer</Link>.
       </p>
     </section>

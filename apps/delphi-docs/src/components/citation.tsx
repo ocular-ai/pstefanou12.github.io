@@ -4,17 +4,15 @@
  * Author: pstefanou12@
  */
 
-import {PAPERS} from '../content/registry';
-import type {PaperKey} from '../content/registry';
+import type {Reference} from '../api';
 
 /** Props of Citation. */
 export interface CitationProps {
-  id: PaperKey;
+  paper: Reference;
 }
 
 /** One reference, its title linking to the paper: authors (year). Title. Venue. */
-export function Citation({id}: CitationProps) {
-  const paper = PAPERS[id];
+export function Citation({paper}: CitationProps) {
   return (
     <span className="citation">
       {paper.authors} ({paper.year}).{' '}

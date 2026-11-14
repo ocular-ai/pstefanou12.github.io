@@ -1,0 +1,71 @@
+A sample is **truncated** when every observation outside some set $S$ is
+missing entirely: not recorded as missing, just absent. What remains is a
+biased view of the distribution that produced it, and statistics computed on
+it, from a mean to a least-squares fit, are biased toward $S$.
+
+delphi.ai's truncated models recover the distribution or model as it was
+before truncation: [distributions](/distributions-truncated), and
+[regressions and classifiers](/stats-truncated) truncated on their response or
+latent. Everything below applies to all of them.
+
+## The truncation set
+
+**The truncation set is a plain callable.** `phi` maps a batch of shape
+`(n, d)` to a mask over it. Anything that answers "is this point observed?"
+works; there is nothing to subclass.
+
+**The dimension comes from the sample.** No model takes `dims`: `fit(S)`
+reads it from `S.shape[1]`, so known parameters such as a covariance must
+match the sample's width.
+
+**`alpha` is optional.** It is the survival mass, the fraction of the
+population inside the set, and it sizes the region the optimizer is kept in.
+Omit it if you cannot measure it: the budget then starts at `min_radius` and
+grows by a factor of `rate` per phase, while the projection still binds, up to
+`max_radius`. `alpha=1` is rejected: with nothing truncated there is nothing
+to correct, so fit the distribution directly.
+
+**Standardize multivariate normals first.** Fit on `(S - mean) / std` with
+`phi` composed with the inverse transform, as in the
+[Quickstart](/quickstart), and map the estimates back: the raw data's scale
+slows the descent.
+
+## Learning the truncation set
+
+When the set cannot be queried, every distribution accepts `phi=None`. It
+then learns the set first, following Lee, Mehrotra and Zampetakis (2024): the
+sample, labeled 1, is mixed with draws from the family's untruncated fit to
+it, labeled 0 at weight `truncation_set_rho`, and a polynomial threshold of
+degree `truncation_set_degree` is fit to the labels by L1 regression. The
+family then fits the samples inside the learned set by the same procedure as
+with a known `phi`. Heavy-tailed families learn the set in $\log x$.
+
+The basis has $\binom{k + d}{d}$ terms, so unless set the degree is the
+largest up to 4 whose basis has at most 250 terms: 4 up to 6 dimensions, 3 up
+to 9, 2 up to 20, and 1 beyond. A family whose samples satisfy a polynomial
+identity, such as the Dirichlet's coordinates summing to one or a Bernoulli's
+$x^2 = x$, raises a `ValueError` naming the degree.
+
+```python
+import torch as ch
+import torch.distributions
+
+from delphi.truncated.distributions import truncated_exponential
+
+ch.manual_seed(0)
+
+# Observed only above 1; the fit is never told so.
+population = torch.distributions.Exponential(ch.tensor([1.0])).sample([20000])
+S = population[population[:, 0] > 1.0][:5000]
+
+model = truncated_exponential.TruncatedExponential(None)
+model.fit(S)
+
+rate = model.avg_rate_
+# The learned set, as a membership oracle.
+inside = model.truncation_set_(ch.tensor([[0.5], [2.0]]))
+```
+
+The [multivariate normal](/truncated-multivariate-normal) has a second route
+for an unknown set, the Hermite expansion of Kontonis, Tzamos and Zampetakis
+(2019), which is its default; `method="l1"` selects the route above instead.

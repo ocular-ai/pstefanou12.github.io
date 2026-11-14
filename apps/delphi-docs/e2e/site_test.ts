@@ -54,3 +54,16 @@ test('the mobile drawer lists every part', async ({page, isMobile}) => {
     parts,
   );
 });
+
+test('a section overview links every class in its package', async ({page}) => {
+  await page.goto('/delphi/#/distributions-truncated');
+  await expect(page.getByRole('heading', {level: 1})).toHaveText('Truncated');
+  await page.locator('a.card-link', {hasText: 'TruncatedPoisson'}).click();
+  await expect(page).toHaveURL(/#\/truncated-poisson$/);
+});
+
+test('the transformations tab documents Pipeline', async ({page}) => {
+  await page.goto('/delphi/#/pipeline');
+  await expect(page.getByRole('heading', {level: 1})).toHaveText('Pipeline');
+  await expect(page.locator('#methods')).toBeVisible();
+});

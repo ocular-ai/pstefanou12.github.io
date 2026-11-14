@@ -6,7 +6,7 @@
 
 import {PrevNext, breadcrumb} from 'pat-components';
 
-import {guides} from '../content/mdx';
+import {MDX} from '../content/mdx';
 import {NAV} from '../content/registry';
 import type {GuideEntry} from '../content/registry';
 import {MdxBody} from './mdx_body';
@@ -18,7 +18,7 @@ export interface GuidePageProps {
 
 /** Renders a guide page. */
 export function GuidePage({entry}: GuidePageProps) {
-  const load = guides[entry.slug];
+  const load = MDX.guides[entry.slug];
   return (
     <article className="page prose">
       <p className="eyebrow">{breadcrumb(NAV, entry.slug)}</p>

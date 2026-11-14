@@ -8,24 +8,28 @@
 import {DocsShell, pageBySlug} from 'pat-components';
 import {Navigate, Route, Routes, useParams} from 'react-router-dom';
 
-import {version} from './api';
-import {AlgorithmPage} from './components/algorithm_page';
+import {MANIFEST} from './api';
+import {ClassPage} from './components/class_page';
 import {GuidePage} from './components/guide_page';
 import {Home} from './components/home';
+import {PackagePage} from './components/package_page';
 import {GITHUB, NAV} from './content/registry';
 import {sourceLinks} from './content/source_links';
 
-const BRAND = {mark: 'δ', name: 'delphi.ai', version: version ?? undefined};
+const BRAND = {mark: 'δ', name: 'delphi.ai', version: MANIFEST.version};
 
 function Page() {
   const {slug = ''} = useParams();
   const entry = pageBySlug(NAV, slug);
   if (!entry) return <Navigate to="/" replace />;
-  return entry.kind === 'guide' ? (
-    <GuidePage key={slug} entry={entry} />
-  ) : (
-    <AlgorithmPage key={slug} entry={entry} />
-  );
+  switch (entry.kind) {
+    case 'guide':
+      return <GuidePage key={slug} entry={entry} />;
+    case 'class':
+      return <ClassPage key={slug} entry={entry} />;
+    case 'package':
+      return <PackagePage key={slug} entry={entry} />;
+  }
 }
 
 /** The app: every route inside the docs shell. */

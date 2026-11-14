@@ -7,18 +7,23 @@ description: Update the delphi.ai documentation in apps/delphi-docs: refresh the
 
 ## Refresh the API reference
 
-1. `just docs-api` regenerates `apps/delphi-docs/src/generated/api.json`
-   from `~/delphi.ai`. For an unmerged branch:
+1. `just docs-api` regenerates `apps/delphi-docs/src/generated/` (the
+   manifest, its JSON Schema, and the TypeScript types) from
+   `~/delphi.ai`. For an unmerged branch:
    `DELPHI_REF=<branch> just docs-api`.
-2. `just test` fails if a page names a model the manifest lacks, or an MDX
-   link points nowhere; fix the registry or the MDX, never the test.
+2. `just test` fails if the manifest does not match its schema, a page
+   names a class the manifest lacks, or an MDX link points nowhere. Fix the
+   exporter, the registry or the MDX, never the test.
 
 ## Add a model page
 
-1. The model must exist in the manifest (step above).
-2. Add its entry to its section in `src/content/registry.ts`.
-3. Optional prose and math: `src/content/algorithms/<slug>.mdx`. Every code
+1. Nothing to register: a public class in a module named after it gets a
+   page in its package's section once the manifest is regenerated.
+2. Optional prose and math: `src/content/classes/<ClassName>.mdx`. A
+   section's overview takes `src/content/packages/<package>.mdx`. Every code
    example must be run against delphi.ai before it is published.
+3. A wrong title, summary or estimate is fixed in delphi.ai (its docstring,
+   `display_name`, or property names), not here.
 
 ## Check and preview
 

@@ -104,10 +104,8 @@ base model or distribution class, or a shared test helper.
    parallel groups.
 3. **A maintainer reviews** the model against this page: its place in the
    package, its config and estimates, its tests, and the style above.
-4. **Document it here.** Add the class to `MODELS` in this site's
-   `delphi/scripts/extract_api.py`, regenerate the reference with
-   `npm run docs:api`, and add an entry to its section in
-   `delphi/web/src/content/registry.ts`. The page then exists, built from
-   your docstrings; prose and math go in
-   `delphi/web/src/content/algorithms/<slug>.mdx`. Cite the paper it
-   implements in the entry's `papers`.
+4. **It is documented automatically.** A public class in a module named
+   after it gets a page in its package's section, built from its
+   docstrings, signature, estimates and config; regenerate the manifest
+   with `just docs-api` in the docs repository to see it. Prose and math go
+   in the docs repository's `apps/delphi-docs/src/content/classes/<ClassName>.mdx`.

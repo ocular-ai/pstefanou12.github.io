@@ -14,9 +14,16 @@ const fileHeader = require('./tools/eslint/file_header_rule.js');
 
 module.exports = [
   {
-    // Build output, and code that predates the style rule (mma/, js/), which
-    // adopts it when next changed.
-    ignores: ['**/node_modules/', '**/dist/', '_site/', 'mma/', 'js/'],
+    // Build output, generated code, and code that predates the style rule
+    // (mma/, js/), which adopts it when next changed.
+    ignores: [
+      '**/node_modules/',
+      '**/dist/',
+      '**/generated/',
+      '_site/',
+      'mma/',
+      'js/',
+    ],
   },
   ...gts,
   {
