@@ -1,0 +1,534 @@
+{
+ "$defs": {
+  "Citation": {
+   "additionalProperties": false,
+   "description": "How to cite delphi.ai, from its CITATION.cff.",
+   "properties": {
+    "title": {
+     "type": "string"
+    },
+    "message": {
+     "type": "string"
+    },
+    "authors": {
+     "description": "As 'Family, Given'.",
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "version": {
+     "type": "string"
+    },
+    "url": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "title",
+    "message",
+    "authors",
+    "version",
+    "url"
+   ],
+   "title": "Citation",
+   "type": "object"
+  },
+  "ClassDoc": {
+   "additionalProperties": false,
+   "description": "Everything the docs know about one public class.",
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "module": {
+     "type": "string"
+    },
+    "package": {
+     "description": "Key of the class's package.",
+     "type": "string"
+    },
+    "title": {
+     "description": "display_name if the class sets one, else its name in words, less its package's name.",
+     "type": "string"
+    },
+    "summary": {
+     "type": "string"
+    },
+    "docstring": {
+     "type": "string"
+    },
+    "abstract": {
+     "type": "boolean"
+    },
+    "bases": {
+     "description": "Every delphi class in the MRO after this one, in order.",
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "attributes": {
+     "additionalProperties": {
+      "type": "string"
+     },
+     "type": "object"
+    },
+    "params": {
+     "description": "The constructor's.",
+     "items": {
+      "$ref": "#/$defs/Param"
+     },
+     "type": "array"
+    },
+    "raises": {
+     "additionalProperties": {
+      "type": "string"
+     },
+     "type": "object"
+    },
+    "estimates": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "methods": {
+     "items": {
+      "$ref": "#/$defs/Method"
+     },
+     "type": "array"
+    },
+    "properties": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/Property"
+     }
+    },
+    "config": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "description": "Key into configs."
+    },
+    "references": {
+     "description": "Keys into references.",
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "source": {
+     "$ref": "#/$defs/Source"
+    }
+   },
+   "required": [
+    "name",
+    "module",
+    "package",
+    "title",
+    "summary",
+    "docstring",
+    "abstract",
+    "bases",
+    "attributes",
+    "params",
+    "raises",
+    "estimates",
+    "methods",
+    "properties",
+    "config",
+    "references",
+    "source"
+   ],
+   "title": "ClassDoc",
+   "type": "object"
+  },
+  "Config": {
+   "additionalProperties": false,
+   "description": "A pydantic config, its fields grouped by declaring class, own first.",
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "module": {
+     "type": "string"
+    },
+    "groups": {
+     "items": {
+      "$ref": "#/$defs/ConfigGroup"
+     },
+     "type": "array"
+    }
+   },
+   "required": [
+    "name",
+    "module",
+    "groups"
+   ],
+   "title": "Config",
+   "type": "object"
+  },
+  "ConfigField": {
+   "additionalProperties": false,
+   "description": "One hyperparameter: a field of a pydantic config.",
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "type": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "default": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "description": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "name",
+    "type",
+    "default",
+    "required",
+    "description"
+   ],
+   "title": "ConfigField",
+   "type": "object"
+  },
+  "ConfigGroup": {
+   "additionalProperties": false,
+   "description": "The fields one config class declares itself.",
+   "properties": {
+    "name": {
+     "description": "The declaring config class.",
+     "type": "string"
+    },
+    "summary": {
+     "type": "string"
+    },
+    "fields": {
+     "items": {
+      "$ref": "#/$defs/ConfigField"
+     },
+     "type": "array"
+    }
+   },
+   "required": [
+    "name",
+    "summary",
+    "fields"
+   ],
+   "title": "ConfigGroup",
+   "type": "object"
+  },
+  "Estimator": {
+   "additionalProperties": false,
+   "description": "An iterate a fit reports estimates at, as ``{name}_{estimate}``.",
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "description": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "name",
+    "description"
+   ],
+   "title": "Estimator",
+   "type": "object"
+  },
+  "Method": {
+   "additionalProperties": false,
+   "description": "A public method.",
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "params": {
+     "description": "Without self or cls.",
+     "items": {
+      "$ref": "#/$defs/Param"
+     },
+     "type": "array"
+    },
+    "returns": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "summary": {
+     "type": "string"
+    },
+    "definedIn": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "name",
+    "params",
+    "returns",
+    "summary",
+    "definedIn"
+   ],
+   "title": "Method",
+   "type": "object"
+  },
+  "Package": {
+   "additionalProperties": false,
+   "description": "A package holding documented classes, or one of its ancestors.",
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "title": {
+     "type": "string"
+    },
+    "summary": {
+     "type": "string"
+    },
+    "docstring": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "name",
+    "title",
+    "summary",
+    "docstring"
+   ],
+   "title": "Package",
+   "type": "object"
+  },
+  "Param": {
+   "additionalProperties": false,
+   "description": "One argument of a constructor or method.",
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "type": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "default": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "description": "Python source of the default, or null when required."
+    },
+    "kind": {
+     "enum": [
+      "positional_only",
+      "positional_or_keyword",
+      "var_positional",
+      "keyword_only",
+      "var_keyword"
+     ],
+     "type": "string"
+    },
+    "description": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "name",
+    "type",
+    "default",
+    "kind",
+    "description"
+   ],
+   "title": "Param",
+   "type": "object"
+  },
+  "Property": {
+   "additionalProperties": false,
+   "description": "A public property that is not one of the class's estimates.",
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "type": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "summary": {
+     "type": "string"
+    },
+    "definedIn": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "name",
+    "type",
+    "summary",
+    "definedIn"
+   ],
+   "title": "Property",
+   "type": "object"
+  },
+  "Reference": {
+   "additionalProperties": false,
+   "description": "A paper a class implements or builds on.",
+   "properties": {
+    "key": {
+     "type": "string"
+    },
+    "authors": {
+     "type": "string"
+    },
+    "title": {
+     "type": "string"
+    },
+    "venue": {
+     "type": "string"
+    },
+    "year": {
+     "type": "integer"
+    },
+    "url": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "key",
+    "authors",
+    "title",
+    "venue",
+    "year",
+    "url"
+   ],
+   "title": "Reference",
+   "type": "object"
+  },
+  "Source": {
+   "additionalProperties": false,
+   "description": "Where a definition lives in the repository.",
+   "properties": {
+    "path": {
+     "description": "Relative to the repository root.",
+     "type": "string"
+    },
+    "line": {
+     "type": "integer"
+    }
+   },
+   "required": [
+    "path",
+    "line"
+   ],
+   "title": "Source",
+   "type": "object"
+  }
+ },
+ "additionalProperties": false,
+ "description": "delphi.ai's public API, as the docs read it.",
+ "properties": {
+  "version": {
+   "type": "string"
+  },
+  "repository": {
+   "type": "string"
+  },
+  "citation": {
+   "anyOf": [
+    {
+     "$ref": "#/$defs/Citation"
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "estimators": {
+   "items": {
+    "$ref": "#/$defs/Estimator"
+   },
+   "type": "array"
+  },
+  "packages": {
+   "additionalProperties": {
+    "$ref": "#/$defs/Package"
+   },
+   "type": "object"
+  },
+  "classes": {
+   "additionalProperties": {
+    "$ref": "#/$defs/ClassDoc"
+   },
+   "description": "Keyed by qualified name, module.Class.",
+   "type": "object"
+  },
+  "configs": {
+   "additionalProperties": {
+    "$ref": "#/$defs/Config"
+   },
+   "type": "object"
+  },
+  "references": {
+   "additionalProperties": {
+    "$ref": "#/$defs/Reference"
+   },
+   "type": "object"
+  }
+ },
+ "required": [
+  "version",
+  "repository",
+  "citation",
+  "estimators",
+  "packages",
+  "classes",
+  "configs",
+  "references"
+ ],
+ "title": "ApiManifest",
+ "type": "object"
+}

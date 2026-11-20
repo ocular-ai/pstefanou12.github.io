@@ -1,0 +1,72 @@
+delphi.ai separates *how a model is fit*, which the trainer owns, from *what is
+fit*, which each model describes.
+
+`delphi/trainer.py` fits any model built on the `DelphiModel` base class
+(`delphi/delphi.py`). Its one entry point, `Trainer.train_model`, runs a
+**procedure**:
+
+1. **An optional warm start.** If the config sets a budget,
+   `warm_start_iterations` or `warm_start_epochs`, the trainer first trains
+   the model's `warm_start_criterion`. `warm_start_`-prefixed settings
+   override the main run's stop criteria for this stage only. Its result is
+   handed to the model's `post_warm_start_hook`.
+2. **Phases.** Each phase trains the model's own `criterion` from the current
+   parameters, with a fresh optimizer and scheduler. After each one, the
+   model's `post_phase_hook` either stops the procedure, giving a reason, or
+   changes the problem for the next phase, such as widening a projection
+   budget. `max_phases` caps the number. A model that never changes its
+   problem keeps the default hook and trains once.
+
+## Stages and results
+
+Each run, warm start or phase, is one **stage**: a config, a criterion and
+that criterion's Hessian, which the Fisher learning-rate schedule sizes its
+steps from. `train_model` returns a `ProcedureResult` with the warm start,
+the phases in order and why the procedure stopped. Each run is a `RunResult`
+holding the config it ran under, its loss, gradient and iterate histories,
+its stop reason and wall time, and any `metrics` the model reports through
+`run_metrics`. The best, final, moving-average and averaged estimates are
+computed from the iterates.
+
+## Stopping
+
+Within a run the trainer steps the optimizer and records every iterate. It
+stops on the first of the iteration or epoch budget, the gradient or loss
+tolerances, patience, or the model's own `should_stop`.
+
+## Training your own model
+
+The trainer fits any `DelphiModel`, not only the library's. A model is an
+`nn.Module` with a config class, its parameters, `forward`, and a
+`criterion`; the [Quickstart](/quickstart)'s `Median` is a complete one:
+
+```python
+class Median(delphi.delphi.DelphiModel[base.DelphiConfig]):
+    defaults = base.DelphiConfig
+
+    def __init__(self, *, hyperparameters=None):
+        super().__init__(hyperparameters=hyperparameters)
+        self.median = ch.nn.Parameter(ch.zeros(1))
+        self.criterion = self.absolute_error
+
+    def forward(self, x):
+        return self.median.expand(x.size(0))
+
+    @staticmethod
+    def absolute_error(prediction, target):
+        return (prediction - target).abs().mean()
+
+
+model = Median(hyperparameters={"iterations": 2000, "record_params_every": 1})
+procedure = delphi.trainer.Trainer(model, model.hyperparameters).train_model(
+    train_loader, val_loader
+)
+procedure.phases[-1].avg_params
+```
+
+Everything else is optional, with defaults that train once: override
+`post_phase_hook` to run further phases, `step_post_hook` to project after
+each step, or set `warm_start_criterion` and a warm-start budget to train a
+simpler loss first. [Models](/models) lists every piece a model can supply.
+`record_params_every` must be positive for the estimates: they are computed
+from the recorded iterates.
